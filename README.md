@@ -15,3 +15,11 @@ $ make
 $ ./report.sh
 
 This script will submit your data once every 15 seconds. You need wget installed.
+
+# Auto-start on boot
+
+Add the following to /etc/rc.local before "exit 0":
+
+/usr/sbin/i2cset -f -y 0 0x34 0x82 0xff
+
+su -c '/home/chip/chip-i2c-thingspeak/report.sh &' chip
