@@ -10,6 +10,6 @@ fi
 
 while [ 1 ]
 do
-	wget -qO/dev/null "$(./report 2>/dev/null)"
+	./report 2>/dev/null | xargs wget -qO/dev/null
 	sleep 15
 done
