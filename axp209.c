@@ -5,9 +5,23 @@
 
 #include "i2c.h"
 
-static short axp209_get_value(int file, char request[2], unsigned char bits) {
+enum axp209_reg_id {
+	AXP209_VBUS_VOLTAGE,
+	AXP209_VBUS_CURRENT,
+	AXP209_TEMPERATURE,
+	AXP209_BATTERY_VOLTAGE,
+	AXP209_CHARGE_CURRENT,
+	AXP209_DISCHARGE_CURRENT,
+	AXP209_IPSOUT_VOLTAGE,
+	AXP209_REGS_COUNT
+};
+
+static const char **axp209_reg;
+
+static short axp209_get_value(int file, enum axp209_reg_id reg_id, unsigned char bits) {
 	char buffer;
 	short result;
+	const char *request = axp209_reg[reg_id];
 
 	if (i2c_rw(file, request, 1, &buffer, 1)) {
 		return 0xffff;
@@ -26,8 +40,8 @@ static short axp209_get_value(int file, char request[2], unsigned char bits) {
 	return result;
 }
 
-static int axp209_get_value_scaled(int file, char request[2], unsigned char bits, float step, float *result) {
-	short value = axp209_get_value(file, request, bits);
+static int axp209_get_value_scaled(int file, enum axp209_reg_id reg_id, unsigned char bits, float step, float *result) {
+	short value = axp209_get_value(file, reg_id, bits);
 
 	if (value == 0xffff) {
 		return 1;
@@ -39,15 +53,15 @@ static int axp209_get_value_scaled(int file, char request[2], unsigned char bits
 }
 
 static int axp209_get_vbus_voltage(int file, float *result) {
-	return axp209_get_value_scaled(file, "\x5A\x5B", 4, 1.7, result);
+	return axp209_get_value_scaled(file, AXP209_VBUS_VOLTAGE, 4, 1.7, result);
 }
 
 static int axp209_get_vbus_current(int file, float *result) {
-	return axp209_get_value_scaled(file, "\x5C\x5D", 4, 0.375, result);
+	return axp209_get_value_scaled(file, AXP209_VBUS_CURRENT, 4, 0.375, result);
 }
 
 static int axp209_get_temperature(int file, float *result) {
-	short value = axp209_get_value(file, "\x5E\x5F", 4);
+	short value = axp209_get_value(file, AXP209_TEMPERATURE, 4);
 
 	if (value == 0xffff) {
 		return 1;
@@ -59,19 +73,19 @@ static int axp209_get_temperature(int file, float *result) {
 }
 
 static int axp209_get_battery_voltage(int file, float *result) {
-	return axp209_get_value_scaled(file, "\x78\x79", 4, 1.1, result);
+	return axp209_get_value_scaled(file, AXP209_BATTERY_VOLTAGE, 4, 1.1, result);
 }
 
 static int axp209_get_charge_current(int file, float *result) {
-	return axp209_get_value_scaled(file, "\x7A\x7B", 4, 0.5, result);
+	return axp209_get_value_scaled(file, AXP209_CHARGE_CURRENT, 4, 0.5, result);
 }
 
 static int axp209_get_discharge_current(int file, float *result) {
-	return axp209_get_value_scaled(file, "\x7C\x7D", 5, 0.5, result);
+	return axp209_get_value_scaled(file, AXP209_DISCHARGE_CURRENT, 5, 0.5, result);
 }
 
 static int axp209_get_ipsout_voltage(int file, float *result) {
-	return axp209_get_value_scaled(file, "\x7E\x7F", 4, 1.4, result);
+	return axp209_get_value_scaled(file, AXP209_IPSOUT_VOLTAGE, 4, 1.4, result);
 }
 
 static int axp209_get_data(int file, char *buf) {
@@ -130,6 +144,16 @@ static int axp209_get_data(int file, char *buf) {
 }
 
 void axp209_write_data(char *buf, unsigned char i2c_id) {
+	axp209_reg = calloc(AXP209_REGS_COUNT, sizeof(char *));
+
+	axp209_reg[AXP209_VBUS_VOLTAGE] = "\x5A\x5B";
+	axp209_reg[AXP209_VBUS_CURRENT] = "\x5C\x5D";
+	axp209_reg[AXP209_TEMPERATURE] = "\x5E\x5F";
+	axp209_reg[AXP209_BATTERY_VOLTAGE] = "\x78\x79";
+	axp209_reg[AXP209_CHARGE_CURRENT] = "\x7A\x7B";
+	axp209_reg[AXP209_DISCHARGE_CURRENT] = "\x7C\x7D";
+	axp209_reg[AXP209_IPSOUT_VOLTAGE] = "\x7E\x7F";
+
 	int file = i2c_connect(i2c_id, 0x34);
 
 	if (file == -1) {
