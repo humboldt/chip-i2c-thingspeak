@@ -4,7 +4,7 @@ LDFLAGS=-Wall -Werror
 
 all: $(TARGET)
 
-$(TARGET): i2c.o axp209.o si7021.o report.o
+$(TARGET): i2c.o axp209.o si7021.o bmp280.o report.o
 
 report.o: config.h
 
