@@ -26,6 +26,7 @@ int i2c_connect(unsigned char i2c_id, unsigned char addr) {
 
 	if (ioctl(file, I2C_SLAVE, addr) < 0) {
 		perror("ioctl I2C_SLAVE");
+		fprintf(stderr, "Kernel module is using the device - force-attaching!\n");
 
 		if (ioctl(file, I2C_SLAVE_FORCE, addr) < 0) {
 			perror("ioctl I2C_SLAVE_FORCE");
